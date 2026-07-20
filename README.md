@@ -40,15 +40,15 @@ so they don't belong in the tool surface.
 Two transports, one server definition (`src/server.js`).
 
 ```sh
-npm install
-npm start          # stdio — local clients spawn the process
-npm run start:http # HTTP  — remote and serverless clients connect to it
+bun install
+bun run start      # stdio — local clients spawn the process
+bun run start:http # HTTP  — remote and serverless clients connect to it
 ```
 
 Register it with Claude Code (stdio):
 
 ```sh
-claude mcp add earth-data -- node /absolute/path/to/earth-data-mcp/src/index.js
+claude mcp add earth-data -- bun /absolute/path/to/earth-data-mcp/src/index.js
 ```
 
 The HTTP mode listens on `PORT` (default 3000) at `/mcp`, plus `/health` for
@@ -73,14 +73,17 @@ What works, all with usable free tiers:
 | --- | --- |
 | **Vercel** | `api/mcp.js` + `vercel.json` are already in this repo — `vercel deploy` works as-is |
 | Cloudflare Workers | Needs a Workers-flavoured entry point instead of `api/mcp.js` |
-| Deno Deploy / Render / Fly.io | Run `npm run start:http` as a long-lived process |
+| Deno Deploy | Needs a Deno-flavoured entry point |
+| Render / Fly.io | Run `bun run start:http` as a long-lived process |
 
 Deploying to Vercel:
 
 ```sh
-npm i -g vercel
-vercel deploy --prod    # → https://<project>.vercel.app/mcp
+bunx vercel deploy --prod    # → https://<project>.vercel.app/mcp
 ```
+
+`vercel.json` selects Vercel's Bun runtime, and `bun.lock` makes Vercel use Bun
+to install dependencies.
 
 There is nothing to configure: the server holds no secrets and needs no
 environment variables, because every upstream it talks to is a public,
@@ -102,9 +105,9 @@ the right tool, (2) parameterises it correctly, and (3) reports an answer
 consistent with the raw upstream data.
 
 ```sh
-ANTHROPIC_API_KEY=... npm run eval
-MODEL=claude-opus-4-8 EFFORT=high RUNS=3 npm run eval    # sweep settings
-MOCK=1 npm run eval                                      # exercise the harness, no tokens
+ANTHROPIC_API_KEY=... bun run eval
+MODEL=claude-opus-4-8 EFFORT=high RUNS=3 bun run eval    # sweep settings
+MOCK=1 bun run eval                                      # exercise the harness, no tokens
 ```
 
 Design decisions worth stating:

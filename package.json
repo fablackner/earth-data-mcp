@@ -4,11 +4,12 @@
   "description": "MCP server exposing live Earth data to AI agents",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "start:http": "node src/index.js --http",
-    "eval": "node eval/run.js"
+    "start": "bun src/index.js",
+    "start:http": "bun src/index.js --http",
+    "eval": "bun eval/run.js"
   },
   "type": "module",
+  "packageManager": "bun@1.3.14",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",
     "@modelcontextprotocol/sdk": "^1.29.0",

@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
   "rewrites": [ { "source": "/mcp", "destination": "/api/mcp" } ],
   "functions": { "api/mcp.js": { "maxDuration": 30 } }
 }

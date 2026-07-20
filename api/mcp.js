@@ -1,6 +1,4 @@
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-
-import { createServer } from '../src/server.js';
+import { handleMcpRequest } from '../src/mcp-http.js';
 
 /**
  * Serverless entry point (Vercel).
@@ -13,25 +11,13 @@ import { createServer } from '../src/server.js';
  * `src/index.js` remains the long-running entry point for stdio and for
  * self-hosted HTTP.
  */
-export default async function handler(req, res) {
-  if (req.method === 'GET' && req.query?.health !== undefined) {
-    return res.status(200).json({ status: 'ok' });
-  }
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === 'GET' && url.searchParams.has('health')) {
+      return Response.json({ status: 'ok' });
+    }
 
-  const server = createServer();
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-
-  res.on('close', () => {
-    transport.close();
-    server.close();
-  });
-
-  try {
-    await server.connect(transport);
-    // Vercel parses JSON bodies onto req.body; the transport wants it passed in.
-    await transport.handleRequest(req, res, req.body);
-  } catch (error) {
-    console.error('MCP request failed:', error);
-    if (!res.headersSent) res.status(500).json({ error: 'internal error' });
-  }
-}
+    return handleMcpRequest(request);
+  },
+};

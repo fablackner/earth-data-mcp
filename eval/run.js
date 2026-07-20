@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * Eval harness for the earth-data MCP server.
  *
@@ -12,8 +12,8 @@
  * opinion: it is reproducible, free, and it cannot itself hallucinate.
  *
  * Usage:
- *   ANTHROPIC_API_KEY=... node eval/run.js
- *   MODEL=claude-opus-4-8 EFFORT=high RUNS=3 node eval/run.js
+ *   ANTHROPIC_API_KEY=... bun eval/run.js
+ *   MODEL=claude-opus-4-8 EFFORT=high RUNS=3 bun eval/run.js
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -221,7 +221,7 @@ async function main() {
   if (!mock && !process.env.ANTHROPIC_API_KEY) {
     console.error(
       'ANTHROPIC_API_KEY is not set — the eval needs it to run the agent.\n' +
-        'Run MOCK=1 node eval/run.js to exercise the harness without it.',
+        'Run MOCK=1 bun eval/run.js to exercise the harness without it.',
     );
     process.exit(2);
   }
@@ -229,7 +229,7 @@ async function main() {
   const anthropic = mock ? null : new Anthropic();
   const mcp = new Client({ name: 'hazards-eval', version: '1.0.0' });
   await mcp.connect(
-    new StdioClientTransport({ command: 'node', args: [join(here, '..', 'src', 'index.js')] }),
+    new StdioClientTransport({ command: 'bun', args: [join(here, '..', 'src', 'index.js')] }),
   );
 
   // The agent sees exactly what any MCP client sees — no hand-written tool

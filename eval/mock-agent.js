@@ -1,5 +1,5 @@
 /**
- * A scripted, deliberately imperfect agent used by `MOCK=1 node eval/run.js`.
+ * A scripted, deliberately imperfect agent used by `MOCK=1 bun eval/run.js`.
  *
  * Each entry reproduces a failure mode worth being able to detect:
  * a right tool with an out-of-band argument, a half-answered multi-part
