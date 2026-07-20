@@ -1,0 +1,21 @@
+{
+  "name": "earth-data-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing live Earth data to AI agents",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:http": "node src/index.js --http",
+    "eval": "node eval/run.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "bin": {
+    "earth-data-mcp": "src/index.js"
+  },
+  "license": "MIT"
+}
