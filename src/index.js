@@ -9,7 +9,7 @@
  * cannot reasonably do per invocation. HTTP is the transport for anything that
  * is not on the same machine.
  */
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 
 import { handleMcpRequest } from './mcp-http.js';
 import { createServer } from './server.js';
@@ -41,5 +41,8 @@ function startHttp() {
 if (useHttp) {
   await startHttp();
 } else {
-  await createServer().connect(new StdioServerTransport());
+  // serveStdio owns the era decision: the opening exchange picks the protocol
+  // revision and pins one instance from the factory for the connection. A server
+  // wired straight to a StdioServerTransport would serve only the 2025 revision.
+  serveStdio(() => createServer());
 }

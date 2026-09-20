@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 
 import { getEarthquake, searchEarthquakes, significantWeek } from './usgs.js';
@@ -48,7 +48,7 @@ export function createServer() {
         'quakes near a place, the largest quake in a period. ' +
         'Times are ISO 8601 (UTC). If start_time is omitted the window is the last 24 hours. ' +
         'For a location search, supply latitude, longitude and radius_km together.',
-      inputSchema: {
+      inputSchema: z.object({
         min_magnitude: z
           .number()
           .min(0)
@@ -65,7 +65,7 @@ export function createServer() {
           .enum(['time', 'time-asc', 'magnitude', 'magnitude-asc'])
           .optional()
           .describe('Sort order. Use "magnitude" to find the largest event in a window.'),
-      },
+      }),
     },
     handler(searchEarthquakes),
   );
@@ -77,9 +77,9 @@ export function createServer() {
       description:
         'Fetch full detail for one earthquake by its USGS event id (e.g. us7000abcd). ' +
         'Call this after search_earthquakes when the user asks to drill into a specific event.',
-      inputSchema: {
+      inputSchema: z.object({
         event_id: z.string().min(1).describe('USGS event id, as returned by search_earthquakes'),
-      },
+      }),
     },
     handler(({ event_id }) => getEarthquake(event_id)),
   );
@@ -93,13 +93,13 @@ export function createServer() {
         'by volcano name or country. Call this for any question about erupting or ' +
         'restless volcanoes. The report covers the past week only — it cannot answer ' +
         'historical questions.',
-      inputSchema: {
+      inputSchema: z.object({
         region: z
           .string()
           .optional()
           .describe('Case-insensitive volcano-name or country filter, e.g. "Iceland"'),
         limit: z.number().int().positive().max(50).optional().describe('Max entries, default 20'),
-      },
+      }),
     },
     handler(weeklyVolcanicActivity),
   );

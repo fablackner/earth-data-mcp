@@ -16,8 +16,8 @@
  *   MODEL=claude-opus-4-8 EFFORT=high RUNS=3 bun eval/run.js
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { Client } from '@modelcontextprotocol/client';
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -38,6 +38,22 @@ Be precise about magnitudes, place names and times. Never state a figure the too
 //----------------------------------------------------------------------------
 // Agent loop
 //----------------------------------------------------------------------------
+
+/**
+ * Call a tool, turning a protocol-level rejection back into a tool error.
+ *
+ * An unknown or disabled tool rejects rather than resolving with `isError`, so
+ * a hallucinated tool name would otherwise abort the run instead of being
+ * scored. The model should see its mistake and get another step, exactly as it
+ * would for an upstream failure.
+ */
+async function callTool(mcp, name, input) {
+  try {
+    return await mcp.callTool({ name, arguments: input });
+  } catch (error) {
+    return { content: [{ type: 'text', text: `tool call failed: ${error.message}` }], isError: true };
+  }
+}
 
 /**
  * Run one question to completion, recording every tool call.
@@ -78,7 +94,7 @@ async function runCase(anthropic, mcp, tools, question) {
     for (const block of response.content) {
       if (block.type !== 'tool_use') continue;
       calls.push({ name: block.name, input: block.input });
-      const output = await mcp.callTool({ name: block.name, arguments: block.input });
+      const output = await callTool(mcp, block.name, block.input);
       results.push({
         type: 'tool_result',
         tool_use_id: block.id,
@@ -211,7 +227,7 @@ async function runMockCase(mcp, testCase) {
   const calls = [];
   for (const call of plan.calls) {
     calls.push(call);
-    await mcp.callTool({ name: call.name, arguments: call.input });
+    await callTool(mcp, call.name, call.input);
   }
   return { calls, finalText: plan.text };
 }
