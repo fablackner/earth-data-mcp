@@ -1,5 +1,6 @@
 import { searchEarthquakes } from '../src/usgs.js';
 import { weeklyVolcanicActivity } from '../src/gvp.js';
+import { co2MaunaLoa } from '../src/gml.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const daysAgo = (n) => new Date(Date.now() - n * DAY);
@@ -182,7 +183,20 @@ export const cases = [
       // over-triggering failure — the cost is latency and tokens on every
       // conversational aside.
       required: [],
-      forbidden: ['search_earthquakes', 'search_volcanic_activity', 'get_earthquake'],
+      forbidden: [
+        'search_earthquakes',
+        'search_volcanic_activity',
+        'get_earthquake',
+        'get_weather',
+        'get_lightning_risk',
+        'search_weather_alerts',
+        'get_air_quality',
+        'get_marine_conditions',
+        'search_natural_events',
+        'search_disasters',
+        'get_space_weather',
+        'get_co2_record',
+      ],
       args: () => [],
     },
   },
@@ -197,5 +211,167 @@ export const cases = [
       required: ['search_earthquakes', 'get_earthquake'],
       args: () => [],
     },
+  },
+
+  {
+    id: 'weather-vienna',
+    question: 'What is the weather like in Vienna right now, and will it rain there tomorrow?',
+    expect: {
+      required: ['get_weather'],
+      forbidden: ['search_earthquakes', 'search_volcanic_activity'],
+      args: (input) => [
+        check(
+          'targets Vienna',
+          (typeof input.location === 'string' && /vienna|wien/i.test(input.location)) ||
+            (nearlyEqual(input.latitude, 48.21, 1) && nearlyEqual(input.longitude, 16.37, 1)),
+          `got location=${input.location ?? 'unset'}, lat/lon=${input.latitude ?? '-'}/${input.longitude ?? '-'}`,
+        ),
+        check(
+          'forecast reaches tomorrow',
+          input.forecast_days === undefined || input.forecast_days >= 2,
+          `got forecast_days=${input.forecast_days} — 1 day cannot answer "tomorrow"`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'lightning-risk',
+    question: 'Is there a risk of thunderstorms or lightning in Munich over the next two days?',
+    expect: {
+      required: ['get_lightning_risk'],
+      forbidden: ['search_earthquakes', 'search_volcanic_activity'],
+      args: (input) => [
+        check(
+          'targets Munich',
+          (typeof input.location === 'string' && /munich|münchen|muenchen/i.test(input.location)) ||
+            (nearlyEqual(input.latitude, 48.14, 1) && nearlyEqual(input.longitude, 11.58, 1)),
+          `got location=${input.location ?? 'unset'}, lat/lon=${input.latitude ?? '-'}/${input.longitude ?? '-'}`,
+        ),
+        check(
+          'window covers ~2 days',
+          input.hours === undefined || (input.hours >= 36 && input.hours <= 72),
+          `got hours=${input.hours} — expected 36–72 for "next two days"`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'alerts-texas',
+    question: 'Are there any active weather warnings in Texas at the moment?',
+    expect: {
+      required: ['search_weather_alerts'],
+      args: (input) => [
+        check(
+          'queries the US feed',
+          /^(us|usa|united states( of america)?)$/i.test(input.country?.trim() ?? ''),
+          `got country=${input.country ?? 'unset'}`,
+        ),
+        check(
+          'narrows to Texas',
+          /^(tx|texas)$/i.test(input.area?.trim() ?? '') ||
+            (nearlyEqual(input.latitude, 31, 6) && nearlyEqual(input.longitude, -99, 8)),
+          `got area=${input.area ?? 'unset'}`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'aurora-tromso',
+    question: 'Could I see the northern lights from Tromsø in the next few days?',
+    expect: {
+      required: ['get_space_weather'],
+      args: (input) => [
+        check(
+          'gives the observer location',
+          nearlyEqual(input.latitude, 69.65, 1.5) && nearlyEqual(input.longitude, 18.96, 3),
+          `got lat/lon=${input.latitude ?? '-'}/${input.longitude ?? '-'} (Tromsø is 69.65/18.96) — without it there is no local outlook`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'air-quality-delhi',
+    question: 'How bad is the air pollution in Delhi today?',
+    expect: {
+      required: ['get_air_quality'],
+      forbidden: ['get_weather'],
+      args: (input) => [
+        check(
+          'targets Delhi',
+          (typeof input.location === 'string' && /delhi/i.test(input.location)) ||
+            (nearlyEqual(input.latitude, 28.65, 1) && nearlyEqual(input.longitude, 77.23, 1)),
+          `got location=${input.location ?? 'unset'}`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'major-disasters',
+    question: 'Which major disasters with a serious humanitarian impact are ongoing worldwide right now?',
+    expect: {
+      required: ['search_disasters'],
+      args: (input) => [
+        check(
+          'does not widen to Green alerts',
+          input.min_alert_level === undefined || input.min_alert_level !== 'Green',
+          `got min_alert_level=${input.min_alert_level} — Green floods the answer with minor events`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'wildfires-now',
+    question: 'What active wildfires is NASA tracking at the moment?',
+    expect: {
+      required: ['search_natural_events'],
+      args: (input) => [
+        check('filters on wildfires', input.category === 'wildfires', `got category=${input.category ?? 'unset'}`),
+        check(
+          'asks for ongoing events',
+          input.status === undefined || input.status === 'open',
+          `got status=${input.status} — closed fires are not "active"`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'marine-nazare',
+    question: 'How big are the waves off Nazaré, Portugal right now?',
+    expect: {
+      required: ['get_marine_conditions'],
+      forbidden: ['get_weather'],
+      args: (input) => [
+        // A coastal town name geocodes onto land, where there is no sea state,
+        // so the question is only answerable with a point out at sea.
+        check(
+          'uses coordinates off Nazaré',
+          nearlyEqual(input.latitude, 39.6, 0.5) && input.longitude >= -10.5 && input.longitude < -9.08,
+          `got location=${input.location ?? 'unset'}, lat/lon=${input.latitude ?? '-'}/${input.longitude ?? '-'} — expected an offshore point west of Nazaré (39.6/-9.07)`,
+        ),
+      ],
+    },
+  },
+
+  {
+    id: 'co2-now',
+    question: 'How high is the CO2 concentration in the atmosphere right now, and how fast is it rising?',
+    expect: {
+      required: ['get_co2_record'],
+      args: () => [],
+    },
+    groundTruth: () => co2MaunaLoa(),
+    // Accept any rounding of the latest monthly mean, e.g. 427.55 as "427.6" or "428".
+    answerCheck: (text, truth) => ({
+      label: 'reports the latest monthly ppm',
+      pass: (text.match(/\d{3}(?:\.\d+)?/g) ?? []).some((n) => Math.abs(Number(n) - truth.latest.ppm) <= 0.5),
+      detail: `expected ~${truth.latest.ppm} ppm (${truth.latest.year}-${truth.latest.month})`,
+    }),
   },
 ];

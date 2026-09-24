@@ -71,4 +71,58 @@ export const script = {
     ],
     text: 'Its significance score is 890.',
   },
+
+  // Right tool and place, but a one-day forecast cannot answer "tomorrow".
+  'weather-vienna': {
+    calls: [{ name: 'get_weather', input: { location: 'Vienna', forecast_days: 1 } }],
+    text: 'It is currently mild in Vienna.',
+  },
+
+  // Correct on every dimension.
+  'lightning-risk': {
+    calls: [{ name: 'get_lightning_risk', input: { location: 'Munich', hours: 48 } }],
+    text: 'No thunderstorms are forecast for Munich in the next 48 hours.',
+  },
+
+  // Correct on every dimension.
+  'alerts-texas': {
+    calls: [{ name: 'search_weather_alerts', input: { country: 'United States', area: 'TX' } }],
+    text: 'The National Weather Service has active warnings in Texas.',
+  },
+
+  // Right tool, but without a location the aurora outlook is generic.
+  'aurora-tromso': {
+    calls: [{ name: 'get_space_weather', input: {} }],
+    text: 'A minor geomagnetic storm is forecast.',
+  },
+
+  // Correct on every dimension.
+  'air-quality-delhi': {
+    calls: [{ name: 'get_air_quality', input: { location: 'Delhi' } }],
+    text: 'Air quality in Delhi is currently rated unhealthy on the US AQI.',
+  },
+
+  // Correct on every dimension.
+  'major-disasters': {
+    calls: [{ name: 'search_disasters', input: { min_alert_level: 'Orange' } }],
+    text: 'GDACS lists several Orange-level events.',
+  },
+
+  // Wrong tool: GDACS instead of NASA's tracker.
+  'wildfires-now': {
+    calls: [{ name: 'search_disasters', input: { types: ['WF'] } }],
+    text: 'There are a few wildfires.',
+  },
+
+  // Right tool, but a town name geocodes onto land, where there is no sea.
+  'marine-nazare': {
+    calls: [{ name: 'get_marine_conditions', input: { location: 'Nazaré' } }],
+    text: 'Waves off Nazaré are around 2 metres.',
+  },
+
+  // Right tool, but the answer quotes a stale figure instead of the tool result.
+  'co2-now': {
+    calls: [{ name: 'get_co2_record', input: {} }],
+    text: 'CO2 is at about 415 ppm, rising by roughly 2 ppm per year.',
+  },
 };

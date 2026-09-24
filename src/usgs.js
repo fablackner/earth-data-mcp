@@ -1,8 +1,6 @@
 import { fetchJson, UpstreamError } from './http.js';
 
 const FDSN_QUERY = 'https://earthquake.usgs.gov/fdsnws/event/1/query';
-const SIGNIFICANT_WEEK =
-  'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson';
 
 /** USGS caps a single query at 20 000 events; we stay far below that on purpose. */
 const MAX_LIMIT = 100;
@@ -106,16 +104,5 @@ export async function getEarthquake(eventId) {
     station_count: p.nst ?? null,
     // The products block is large and mostly URLs to other USGS pages.
     available_products: Object.keys(p.products ?? {}),
-  };
-}
-
-/** The curated "significant events, past 7 days" feed, as a browsable document. */
-export async function significantWeek() {
-  const feed = await fetchJson(SIGNIFICANT_WEEK, { ttlMs: 300_000 });
-  return {
-    title: feed.metadata?.title,
-    generated: toIso(feed.metadata?.generated ?? Date.now()),
-    count: feed.features?.length ?? 0,
-    events: (feed.features ?? []).map(summarizeFeature),
   };
 }
